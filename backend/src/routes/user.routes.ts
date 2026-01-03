@@ -10,7 +10,7 @@ userVerifyRouter.get("/me", authMiddleware, (req:AuthenticatedRequest, res) => {
   }
   return res.json({
     message: "You are authenticated",
-    user:req.user
+    user:{id:req.user.userId, email:req.user.email}
   });
 });
 

@@ -43,7 +43,7 @@ export default function LoginForm() {
 
     startTransition(async () => {
       try {
-        const res = await apiClient.post("/auth/login", { email, password });
+        await apiClient.post("/auth/login", { email, password });
         refreshUser()
         router.replace("/");
       } catch (error: unknown) {

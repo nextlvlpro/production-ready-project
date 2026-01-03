@@ -3,12 +3,15 @@
 import { apiClient } from "@/lib/apiClient";
 import axios from "axios";
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
 
 export default function SignupForm() {
 
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
-
+    const { refreshUser } = useAuth();
+    const router = useRouter();
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -19,15 +22,12 @@ export default function SignupForm() {
         startTransition(async () => {
 
             try {
-
                 let res = await apiClient.post("/auth/signup", {
                 email,
                 password,
             })
-            localStorage.setItem("token", res.data.token);
-
-            console.log(res.data);
-            //change later placeholder for now
+                refreshUser()
+                router.replace("/")
                 
             } catch (err: unknown) {
                 console.error(err);

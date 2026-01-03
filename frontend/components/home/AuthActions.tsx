@@ -7,7 +7,6 @@ import LogoutButton from "../auth/LogoutButton"
 export default function AuthActions() {
   const { user } = useAuth()
 
-  console.log(user)
 
   return (
     <>
