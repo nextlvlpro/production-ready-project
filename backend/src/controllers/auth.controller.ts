@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { authenticateUser, createUser } from "../services/auth.service";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env";
+import { signJwt } from "../utils/jwt";
 
 
 export async function signupController(req: Request, res: Response) {
@@ -13,20 +14,24 @@ export async function signupController(req: Request, res: Response) {
 
     try {
         const user = await createUser(email, password)
-        const token = jwt.sign({
+        const token = signJwt({
             userId: user.id,
             email: user.email,
-        },
-            env.jwtSecret,
-            { expiresIn: "1h" }
-        )
+        })
+
+        res.cookie("access_token", token, {
+            httpOnly: true,
+            secure: env.nodeEnv === "production",
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        })
 
         return res.status(201).json({
+            message: "User created successfully",
             user: {
                 id: user.id,
                 email: user.email,
-            },
-            token,
+            }
         })
     } catch (err: any) {
         if (err.code === "USER_EXISTS") {
@@ -42,7 +47,7 @@ export async function signupController(req: Request, res: Response) {
 
 // login controller
 
-export async function loginController(req:Request, res:Response) {
+export async function loginController(req: Request, res: Response) {
 
     const { email, password } = req.body as { email: string, password: string }
 
@@ -52,24 +57,30 @@ export async function loginController(req:Request, res:Response) {
 
     try {
         const user = await authenticateUser(email, password)
-        
-        const token = jwt.sign({
-            userId:user.id,
-            email:user.email
-        },
-        env.jwtSecret,
-        { expiresIn: "1h" }
-    )
 
-    return res.status(200).json({
-        user: {
-            id: user.id,
-            email: user.email,
-        },
-        token,
-    })
+        const token = signJwt({
+            userId: user.id,
+            email: user.email
+        })
 
-    } catch (err:any) {
+
+        res.cookie("access_token", token, {
+            httpOnly: true,
+            secure: env.nodeEnv === "production",
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        })
+
+        res.json({
+            message: "Login successful",
+            user: {
+                id: user.id,
+                email: user.email,
+            },
+        });
+        return;
+
+    } catch (err: any) {
         if (err.code === "USER_NOT_FOUND") {
             return res.status(404).json({ error: "User not found" })
         }
@@ -82,5 +93,14 @@ export async function loginController(req:Request, res:Response) {
 
         return res.status(500).json({ error: "Internal server error" })
     }
-    
+
+}
+
+export async function logoutController(req: Request, res: Response) {
+    res.clearCookie("access_token", {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: env.nodeEnv === "production",
+    });
+    res.json({ message: "Logout successful" });
 }

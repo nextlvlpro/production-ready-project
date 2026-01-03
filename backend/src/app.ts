@@ -1,4 +1,5 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 import { healthRouter } from "./routes/health.route";
 import { requestIdMiddleware } from "./middlewares/requestId.middleware";
 import { httpLogger } from "./middlewares/httpLogger.middleware";
@@ -14,6 +15,7 @@ export function createApp () {
 
   app.use(requestIdMiddleware)
   app.use(httpLogger)
+  app.use(cookieParser())
   app.use(cors({
     origin:"http://localhost:3000",
     credentials:true

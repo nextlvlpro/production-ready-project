@@ -1,15 +1,16 @@
 import { Router } from "express";
-import { requireAuth } from "../middlewares/auth.middleware";
+import { authMiddleware } from "../middlewares/auth.middleware";
+import { AuthenticatedRequest } from "../interface/authInterface";
 
 const userVerifyRouter = Router();
 
-userVerifyRouter.get("/me", requireAuth, (req, res) => {
+userVerifyRouter.get("/me", authMiddleware, (req:AuthenticatedRequest, res) => {
+  if (!req.user) {
+    return res.status(500).json({ message: "Auth state invalid" });
+  }
   return res.json({
     message: "You are authenticated",
-    user: {
-      id: (req as any).userId,
-      email: (req as any).email,
-    },
+    user:req.user
   });
 });
 

@@ -4,4 +4,5 @@ import { env } from "@/config/env";
 export const apiClient = axios.create({
   baseURL: env.apiBaseUrl,
   timeout: 5000,
+  withCredentials: true,
 });

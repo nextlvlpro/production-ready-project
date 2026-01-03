@@ -1,42 +1,62 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import axios from "axios";
 import { apiClient } from "@/lib/apiClient";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
 
 export default function LoginForm() {
+  const { user, isPending: authPending, refreshUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
- function handleSubmit (e: React.FormEvent<HTMLFormElement>) {
+  // Redirect AFTER auth is resolved
+  useEffect(() => {
+    if (!authPending && user) {
+      router.replace("/");
+    }
+  }, [authPending, user, router]);
+
+  // 🚫 BLOCK rendering until auth status is known
+  if (authPending) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin h-10 w-10 border-b-2 border-gray-900 rounded-full" />
+      </div>
+    )
+  }
+
+  // 🚫 BLOCK rendering if user is already logged in
+  if (user) {
+    return null;
+  }
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    const formData  = new FormData(e.currentTarget);
 
+    const formData = new FormData(e.currentTarget);
     const email = formData.get("email");
     const password = formData.get("password");
 
     startTransition(async () => {
       try {
-        let res =  await apiClient.post("/auth/login", {
-          email,
-          password
-        })
-
-        console.log(res.data);
-        localStorage.setItem("token", res.data.token);
-
-        alert("Login successful");
-
+        const res = await apiClient.post("/auth/login", { email, password });
+        refreshUser()
+        router.replace("/");
       } catch (error: unknown) {
         if (axios.isAxiosError(error)) {
-          setError(error.response?.data?.message || "An unexpected error occurred");
+          setError(
+            error.response?.data?.message || "An unexpected error occurred"
+          );
         } else {
           setError("An unexpected error occurred");
         }
       }
-    })
- }
+    });
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
